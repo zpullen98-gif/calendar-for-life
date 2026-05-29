@@ -1,0 +1,59 @@
+{
+  "name": "Calendar For Life",
+  "short_name": "Calendar",
+  "description": "An illuminated almanac of festivals worth flying for. 365 voyages, 52 living-history reenactments, 52 fandom gatherings, and 29 pilgrimages across twelve charts of the world.",
+  "id": "/",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#0a0604",
+  "theme_color": "#1a1410",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["travel", "lifestyle", "entertainment", "books"],
+  "icons": [
+    { "src": "icons/icon-16.png",   "sizes": "16x16",   "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-32.png",   "sizes": "32x32",   "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-48.png",   "sizes": "48x48",   "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-64.png",   "sizes": "64x64",   "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-72.png",   "sizes": "72x72",   "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-96.png",   "sizes": "96x96",   "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-128.png",  "sizes": "128x128", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-144.png",  "sizes": "144x144", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-152.png",  "sizes": "152x152", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-167.png",  "sizes": "167x167", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-180.png",  "sizes": "180x180", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-192.png",  "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-192-maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon-384.png",  "sizes": "384x384", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png",  "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon-1024.png", "sizes": "1024x1024", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon.svg",      "sizes": "any",     "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "screenshots": [
+    { "src": "screenshots/desktop-1.png", "sizes": "1280x800",  "type": "image/png", "form_factor": "wide",   "label": "The Twelve Charts" },
+    { "src": "screenshots/desktop-2.png", "sizes": "1280x800",  "type": "image/png", "form_factor": "wide",   "label": "A Voyage Scroll" },
+    { "src": "screenshots/mobile-1.png",  "sizes": "750x1334",  "type": "image/png", "form_factor": "narrow", "label": "Cover & Compass" },
+    { "src": "screenshots/mobile-2.png",  "sizes": "750x1334",  "type": "image/png", "form_factor": "narrow", "label": "Charts on Phone" }
+  ],
+  "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "Open the next voyage",
+      "short_name": "Next Voyage",
+      "description": "Jump to the soonest voyage on the chart",
+      "url": "./index.html?next=1",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Browse all charts",
+      "short_name": "Charts",
+      "description": "Open the Twelve Charts directly",
+      "url": "./index.html?almanac=1",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

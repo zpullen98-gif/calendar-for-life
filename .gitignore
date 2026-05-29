@@ -1,0 +1,29 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# PWABuilder downloads (re-generated on demand, not source of truth)
+*.msixbundle
+*.aab
+*.ipa
+*.pkg
+pwabuilder-*/
+
+# Local server logs
+*.log
+
+# Personal screenshots not yet placed under screenshots/
+~screenshots/
+
+# Local dev helper scripts and previews — not part of the shipped app
+.scripts/
+
+# Claude Code machine-specific config (launch settings, local task list, etc.)
+.claude/
+
+# Marketing assets with unfilled placeholders (privacy policy email, press kit contact)
+# Move into repo once placeholders are filled.
+marketing/

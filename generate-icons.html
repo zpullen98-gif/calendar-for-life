@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Calendar For Life — Icon Generator</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0a0604;
+    color: #f3e6c8;
+    font-family: Georgia, 'Times New Roman', serif;
+    padding: 2rem;
+    min-height: 100vh;
+  }
+  h1 {
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.5rem;
+    color: #f3e6c8;
+  }
+  p { color: #ead8b0; max-width: 720px; line-height: 1.55; margin-bottom: 1rem; }
+  code { background: rgba(243,230,200,0.08); padding: 0 0.3rem; color: #d4b366; }
+  .btn {
+    background: linear-gradient(135deg, #4d1118, #7a1f2b);
+    color: #f3e6c8;
+    border: 1px solid #b8893a;
+    padding: 0.9rem 2.2rem;
+    font-family: Georgia, serif;
+    font-weight: 600;
+    letter-spacing: 0.4em;
+    font-size: 0.85rem;
+    cursor: pointer;
+    text-transform: uppercase;
+    margin: 1rem 0.5rem 1rem 0;
+  }
+  .btn:hover { background: linear-gradient(135deg, #7a1f2b, #92263a); }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+  .item {
+    background: rgba(243,230,200,0.05);
+    border: 1px solid rgba(184,137,58,0.35);
+    padding: 0.8rem;
+    text-align: center;
+  }
+  .item canvas {
+    max-width: 100%;
+    height: auto;
+    background: #1a1006;
+    image-rendering: -webkit-optimize-contrast;
+  }
+  .item .label {
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    color: #d4b366;
+    text-transform: uppercase;
+  }
+  .status {
+    margin-top: 1rem;
+    color: #b59c6a;
+    font-style: italic;
+  }
+  a.dl {
+    display: inline-block;
+    margin-top: 0.3rem;
+    color: #d4b366;
+    text-decoration: none;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+  }
+  a.dl:hover { color: #f3e6c8; text-decoration: underline; }
+</style>
+</head>
+<body>
+  <h1>Icon Generator</h1>
+  <p>
+    Renders every PNG size needed by the manifest from <code>icons/icon.svg</code>.<br>
+    Click <strong>Generate</strong> to draw them on this page. Then click <strong>Download All (.zip)</strong>
+    — or click each individual <em>Download</em> link — and place the files in the
+    <code>icons/</code> folder next to <code>manifest.webmanifest</code>.
+  </p>
+  <p>
+    PWABuilder will use these icons as-is when generating store packages.
+  </p>
+
+  <button class="btn" id="generate">Generate Icons</button>
+  <button class="btn" id="zip" disabled>Download All (.zip)</button>
+
+  <div class="status" id="status">Idle.</div>
+
+  <div class="grid" id="grid"></div>
+
+<script>
+  // Each entry: { name, size, maskable }
+  // Maskable variants render the SVG centred without scaling-down — our SVG already
+  // has a full-bleed background, so the same render satisfies both purposes.
+  const TARGETS = [
+    { name: 'icon-72.png',           size: 72 },
+    { name: 'icon-96.png',           size: 96 },
+    { name: 'icon-128.png',          size: 128 },
+    { name: 'icon-144.png',          size: 144 },
+    { name: 'icon-152.png',          size: 152 },
+    { name: 'icon-180.png',          size: 180 },
+    { name: 'icon-192.png',          size: 192 },
+    { name: 'icon-192-maskable.png', size: 192, maskable: true },
+    { name: 'icon-384.png',          size: 384 },
+    { name: 'icon-512.png',          size: 512 },
+    { name: 'icon-512-maskable.png', size: 512, maskable: true },
+    { name: 'icon-1024.png',         size: 1024 },
+  ];
+
+  // Store tile is wide — we centre the compass on a parchment-dark field.
+  const TILES = [
+    { name: 'store-tile-620x300.png', w: 620, h: 300 },
+  ];
+
+  const grid = document.getElementById('grid');
+  const status = document.getElementById('status');
+  const zipBtn = document.getElementById('zip');
+  const generated = []; // { name, blob, url }
+
+  async function loadSvg() {
+    const res = await fetch('icons/icon.svg');
+    if (!res.ok) throw new Error('Could not load icons/icon.svg — open this file via http (use the simple local server in DEPLOY.md), not as file://');
+    return await res.text();
+  }
+
+  function renderToCanvas(svgText, w, h, opts = {}) {
+    return new Promise((resolve, reject) => {
+      const blob = new Blob([svgText], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        if (opts.bg) {
+          ctx.fillStyle = opts.bg;
+          ctx.fillRect(0, 0, w, h);
+        }
+        if (opts.center) {
+          // wide tile: keep compass centred and proportional
+          const side = Math.min(w, h);
+          const x = (w - side) / 2;
+          const y = (h - side) / 2;
+          ctx.drawImage(img, x, y, side, side);
+        } else {
+          ctx.drawImage(img, 0, 0, w, h);
+        }
+        URL.revokeObjectURL(url);
+        resolve(canvas);
+      };
+      img.onerror = (e) => { URL.revokeObjectURL(url); reject(e); };
+      img.src = url;
+    });
+  }
+
+  function canvasToBlob(canvas) {
+    return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+  }
+
+  document.getElementById('generate').addEventListener('click', async () => {
+    grid.innerHTML = '';
+    generated.length = 0;
+    status.textContent = 'Loading SVG…';
+    let svgText;
+    try { svgText = await loadSvg(); }
+    catch (err) { status.textContent = err.message; return; }
+
+    status.textContent = 'Rendering…';
+    for (const t of TARGETS) {
+      const canvas = await renderToCanvas(svgText, t.size, t.size);
+      const blob = await canvasToBlob(canvas);
+      const url = URL.createObjectURL(blob);
+      generated.push({ name: t.name, blob, url });
+      appendItem(t.name, canvas, url);
+    }
+    for (const t of TILES) {
+      const canvas = await renderToCanvas(svgText, t.w, t.h, { bg: '#1a1006', center: true });
+      const blob = await canvasToBlob(canvas);
+      const url = URL.createObjectURL(blob);
+      generated.push({ name: t.name, blob, url });
+      appendItem(t.name, canvas, url);
+    }
+    status.textContent = `Generated ${generated.length} files. Click each Download link, or use Download All.`;
+    zipBtn.disabled = false;
+  });
+
+  function appendItem(name, canvas, url) {
+    const div = document.createElement('div');
+    div.className = 'item';
+    const display = canvas.cloneNode();
+    display.width = canvas.width;
+    display.height = canvas.height;
+    display.style.maxWidth = '120px';
+    display.getContext('2d').drawImage(canvas, 0, 0);
+    div.appendChild(display);
+
+    const label = document.createElement('div');
+    label.className = 'label';
+    label.textContent = name;
+    div.appendChild(label);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    a.textContent = 'Download ▾';
+    a.className = 'dl';
+    div.appendChild(a);
+
+    grid.appendChild(div);
+  }
+
+  // Naive .zip writer (store-only / no compression). Avoids any library.
+  function makeZip(files) {
+    const enc = new TextEncoder();
+    function crc32(buf) {
+      let c = 0xFFFFFFFF;
+      const table = crc32.table || (crc32.table = (() => {
+        const t = new Uint32Array(256);
+        for (let i = 0; i < 256; i++) {
+          let v = i;
+          for (let k = 0; k < 8; k++) v = (v & 1) ? (0xEDB88320 ^ (v >>> 1)) : (v >>> 1);
+          t[i] = v >>> 0;
+        }
+        return t;
+      })());
+      for (let i = 0; i < buf.length; i++) c = table[(c ^ buf[i]) & 0xFF] ^ (c >>> 8);
+      return (c ^ 0xFFFFFFFF) >>> 0;
+    }
+    const localParts = [];
+    const centralParts = [];
+    let offset = 0;
+    for (const f of files) {
+      const nameBytes = enc.encode(f.name);
+      const data = new Uint8Array(f.bytes);
+      const crc = crc32(data);
+      const localHeader = new Uint8Array(30 + nameBytes.length);
+      const dv = new DataView(localHeader.buffer);
+      dv.setUint32(0, 0x04034b50, true);
+      dv.setUint16(4, 20, true);          // version
+      dv.setUint16(6, 0, true);           // flags
+      dv.setUint16(8, 0, true);           // method = store
+      dv.setUint16(10, 0, true);          // mod time
+      dv.setUint16(12, 0, true);          // mod date
+      dv.setUint32(14, crc, true);
+      dv.setUint32(18, data.length, true);
+      dv.setUint32(22, data.length, true);
+      dv.setUint16(26, nameBytes.length, true);
+      dv.setUint16(28, 0, true);
+      localHeader.set(nameBytes, 30);
+      localParts.push(localHeader, data);
+
+      const central = new Uint8Array(46 + nameBytes.length);
+      const cv = new DataView(central.buffer);
+      cv.setUint32(0, 0x02014b50, true);
+      cv.setUint16(4, 20, true);
+      cv.setUint16(6, 20, true);
+      cv.setUint16(8, 0, true);
+      cv.setUint16(10, 0, true);
+      cv.setUint16(12, 0, true);
+      cv.setUint16(14, 0, true);
+      cv.setUint32(16, crc, true);
+      cv.setUint32(20, data.length, true);
+      cv.setUint32(24, data.length, true);
+      cv.setUint16(28, nameBytes.length, true);
+      cv.setUint16(30, 0, true);
+      cv.setUint16(32, 0, true);
+      cv.setUint16(34, 0, true);
+      cv.setUint16(36, 0, true);
+      cv.setUint32(38, 0, true);
+      cv.setUint32(42, offset, true);
+      central.set(nameBytes, 46);
+      centralParts.push(central);
+
+      offset += localHeader.length + data.length;
+    }
+    const centralSize = centralParts.reduce((s, p) => s + p.length, 0);
+    const end = new Uint8Array(22);
+    const ev = new DataView(end.buffer);
+    ev.setUint32(0, 0x06054b50, true);
+    ev.setUint16(4, 0, true);
+    ev.setUint16(6, 0, true);
+    ev.setUint16(8, files.length, true);
+    ev.setUint16(10, files.length, true);
+    ev.setUint32(12, centralSize, true);
+    ev.setUint32(16, offset, true);
+    ev.setUint16(20, 0, true);
+    return new Blob([...localParts, ...centralParts, end], { type: 'application/zip' });
+  }
+
+  zipBtn.addEventListener('click', async () => {
+    if (!generated.length) return;
+    status.textContent = 'Packing zip…';
+    const files = [];
+    for (const g of generated) {
+      const buf = await g.blob.arrayBuffer();
+      files.push({ name: 'icons/' + g.name, bytes: new Uint8Array(buf) });
+    }
+    const zipBlob = makeZip(files);
+    const url = URL.createObjectURL(zipBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'calendar-for-life-icons.zip';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    status.textContent = 'Saved calendar-for-life-icons.zip — unzip into the project folder so the icons/ paths line up.';
+  });
+</script>
+</body>
+</html>
