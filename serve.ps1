@@ -3,6 +3,7 @@
 # Stop:   Ctrl+C   (or kill the powershell process)
 
 $port = 8080
+if ($env:PORT) { $port = [int]$env:PORT }
 $root = $PSScriptRoot
 if (-not $root) { $root = Split-Path -Parent $MyInvocation.MyCommand.Path }
 
