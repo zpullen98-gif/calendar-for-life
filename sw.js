@@ -1,5 +1,5 @@
 /* ============================================================
-   Calendar For Life â€” service worker
+   Calendar For Life - service worker
    Cache-first for the app shell, network-first for Google Fonts.
    Bump CACHE_VERSION whenever index.html or icons change so old
    clients refresh on next load.
@@ -31,7 +31,7 @@ const APP_SHELL = [
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
     const cache = await caches.open(APP_CACHE);
-    // addAll is atomic â€” if one URL fails the whole install fails.
+    // addAll is atomic - if one URL fails the whole install fails.
     // Use individual adds so a missing icon during dev doesn't break the SW.
     await Promise.all(APP_SHELL.map(async url => {
       try { await cache.add(url); }
@@ -57,19 +57,19 @@ self.addEventListener('fetch', event => {
 
   const url = new URL(req.url);
 
-  // Google Fonts â€” stale-while-revalidate so updates land but offline still works.
+  // Google Fonts - stale-while-revalidate so updates land but offline still works.
   if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com') {
     event.respondWith(staleWhileRevalidate(req, FONT_CACHE));
     return;
   }
 
-  // Same-origin app shell â€” cache-first.
+  // Same-origin app shell - cache-first.
   if (url.origin === self.location.origin) {
     event.respondWith(cacheFirst(req, APP_CACHE));
     return;
   }
 
-  // Anything else â€” try network, fall back to cache if present.
+  // Anything else - try network, fall back to cache if present.
   event.respondWith(networkFirst(req, APP_CACHE));
 });
 
@@ -84,7 +84,7 @@ async function cacheFirst(req, cacheName) {
     }
     return res;
   } catch (err) {
-    // Offline + miss â€” surface the parchment fallback for navigations.
+    // Offline + miss - surface the parchment fallback for navigations.
     if (req.mode === 'navigate') {
       const fallback = await cache.match('./offline.html');
       if (fallback) return fallback;
