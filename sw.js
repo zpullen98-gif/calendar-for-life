@@ -5,7 +5,7 @@
    clients refresh on next load.
    ============================================================ */
 
-const CACHE_VERSION = 'cfl-v39';
+const CACHE_VERSION = 'cfl-v40';
 const APP_CACHE     = `${CACHE_VERSION}-app`;
 const FONT_CACHE    = `${CACHE_VERSION}-fonts`;
 
@@ -14,6 +14,7 @@ const APP_SHELL = [
   './index.html',
   './manifest.webmanifest',
   './offline.html',
+  './privacy.html',
   './icons/icon.svg',
   './icons/icon-72.png',
   './icons/icon-96.png',
