@@ -1591,6 +1591,85 @@
   /* ============================================================
      FOOTER closing flourish
      ============================================================ */
+  /* ====== TODAY MASTHEAD ====== */
+  .today-masthead {
+    max-width: 1400px;
+    margin: 0 auto 3rem;
+    padding: 1.8rem 1.6rem 2rem;
+    border: 1px solid rgba(184,137,58,0.35);
+    border-radius: 4px;
+    background:
+      radial-gradient(ellipse 70% 60% at 50% 0%, rgba(184,137,58,0.10) 0%, transparent 70%),
+      rgba(10,6,4,0.30);
+    box-shadow: inset 0 0 60px rgba(0,0,0,0.35);
+  }
+  .today-masthead[hidden] { display: none; }
+  .today-mast-head { text-align: center; }
+  .today-mast-eyebrow {
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    letter-spacing: 0.42em;
+    font-size: 0.66rem;
+    text-transform: uppercase;
+    color: var(--gold);
+    opacity: 0.9;
+  }
+  .today-mast-date {
+    font-family: 'Cinzel Decorative', serif;
+    font-weight: 700;
+    font-size: clamp(1.35rem, 3.4vw, 2.1rem);
+    color: var(--parchment);
+    margin-top: 0.5rem;
+    line-height: 1.15;
+  }
+  .today-mast-rule {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    align-items: center;
+    margin: 0.9rem auto 0.8rem;
+    max-width: 260px;
+  }
+  .today-mast-rule .line {
+    height: 1px;
+    width: 100%;
+    background: linear-gradient(90deg, transparent, rgba(184,137,58,0.75), transparent);
+  }
+  .today-mast-rule .line:last-child { width: 55%; }
+  .today-mast-lede {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    font-size: 1.02rem;
+    color: var(--parchment);
+    opacity: 0.85;
+  }
+  .today-mast-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.1rem;
+    margin-top: 1.6rem;
+  }
+  .today-mast-more {
+    display: block;
+    margin: 1.4rem auto 0;
+    background: transparent;
+    border: 1px solid rgba(184,137,58,0.45);
+    color: var(--gold);
+    font-family: 'Cinzel', serif;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-size: 0.68rem;
+    padding: 0.6rem 1.4rem;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+  .today-mast-more:hover { background: rgba(184,137,58,0.14); color: var(--parchment); }
+  @media (max-width: 640px) {
+    .today-masthead { padding: 1.3rem 1rem 1.5rem; margin-bottom: 2.2rem; }
+    .today-mast-grid { grid-template-columns: 1fr; }
+  }
+
   .closing-flourish {
     text-align: center;
     margin: 5rem auto 2rem;
@@ -3285,6 +3364,10 @@
 
   <!-- 12 CHART CARDS -->
   <div id="charts-home">
+    <!-- TODAY. The only view with a reason to open the almanac daily, which is
+         the whole argument for installing it, so it sits above the charts. -->
+    <section class="today-masthead" id="today-masthead" aria-label="Today in the almanac" hidden></section>
+
     <div class="charts-grid" id="charts-grid">
       <!-- populated by JS -->
     </div>
@@ -3792,6 +3875,14 @@
     tagline: 'The almanac charts the year. The agency gets you there.',
     contactEmail: 'zpullen98@gmail.com',
     siteUrl: '',
+    // The Ship's Manifest gate on the My Voyages suite is OFF by default.
+    // Bookmarks, journals and galley notes are exactly the features that make a
+    // reader install the app and come back, and taxing them with an email on a
+    // site that has no traffic yet converts almost nobody while costing
+    // retention. The high-intent capture is Plan This Voyage, which is ungated,
+    // plus the colophon signup. Flip this to true to put the gate back:
+    // requireManifest() honours it and nothing else needs to change.
+    gateMyVoyages: false,
     endpoint: {
       provider: 'web3forms',
       url: 'https://api.web3forms.com/submit',
@@ -4497,6 +4588,50 @@
     const k = (s || '').toLowerCase().trim();
     return Object.prototype.hasOwnProperty.call(MONTH_NAME_MAP, k) ? MONTH_NAME_MAP[k] : null;
   }
+
+  // ---- weekday rules ----
+  // 64 date fields state a RULE rather than a date ("first weekend of August",
+  // "third Saturday of March", "last Wednesday of August") and 7 more state an
+  // anchor plus a rule ("Sat-Sun nearest June 18"). A rule is the better kind of
+  // date for an almanac that outlives its reference year: it recomputes itself.
+  // Before this, none of them resolved and the Today view put all 64 on the
+  // first of the month.
+  const WD_NAMES = 'Sun|Mon|Tues?|Weds?|Thur?s?|Fri|Sat|Sunday|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday';
+  const WD_INDEX = {
+    sun:0, sunday:0, mon:1, monday:1, tue:2, tues:2, tuesday:2, wed:3, weds:3, wednesday:3,
+    thu:4, thur:4, thurs:4, thursday:4, fri:5, friday:5, sat:6, saturday:6
+  };
+  const ORDINAL_INDEX = { first:1, second:2, third:3, fourth:4, fifth:5, last:-1, penultimate:-2 };
+  function weekdayIndex(s) {
+    const k = (s || '').toLowerCase().trim();
+    return Object.prototype.hasOwnProperty.call(WD_INDEX, k) ? WD_INDEX[k] : null;
+  }
+  // n > 0 counts from the start of the month, n < 0 back from the end.
+  function nthWeekdayOfMonth(year, monthIdx, wd, n) {
+    if (n > 0) {
+      const first = new Date(year, monthIdx, 1);
+      const shift = (wd - first.getDay() + 7) % 7;
+      return new Date(year, monthIdx, 1 + shift + (n - 1) * 7);
+    }
+    const last = new Date(year, monthIdx + 1, 0);
+    const shift = (last.getDay() - wd + 7) % 7;
+    return new Date(year, monthIdx, last.getDate() - shift + (n + 1) * 7);
+  }
+  // Closest date carrying that weekday; a dead tie resolves forward.
+  function nearestWeekday(anchor, wd) {
+    const fwd = (wd - anchor.getDay() + 7) % 7;
+    const back = 7 - fwd;
+    const offset = (fwd === 0) ? 0 : (fwd <= back ? fwd : -back);
+    return new Date(anchor.getFullYear(), anchor.getMonth(), anchor.getDate() + offset);
+  }
+  // A weekend is named by its Saturday; Fri sits one day before it, Sun one
+  // after, and "Wed-Sun" spans from three days before.
+  function offsetFromSaturday(wd) {
+    let off = wd - 6;
+    if (off < -3) off += 7;
+    return off;
+  }
+  function addDays(d, n) { return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n); }
   function parseVoyageDate(v) {
     // Memoized: sorts and the Today scan parse the same entries repeatedly.
     if (v._pvd !== undefined) return v._pvd;
@@ -4534,6 +4669,65 @@
         return { start, end, confidence: 'weekend-near' };
       }
     }
+    // RULE: "Sat-Sun nearest June 18", "Wed-Sun nearest Nov 25", "Sun nearest
+    // Mar 29". The weekday pair is the rule and the date is only the anchor, so
+    // reading the pair as a label of the anchor day (which is what the generic
+    // pattern below would do) gets both the day and the label wrong.
+    m = text.match(new RegExp('\\b(' + WD_NAMES + ')(?:\\s*-\\s*(' + WD_NAMES + '))?\\s+nearest\\s+([A-Za-z]{3,9})\\s+(\\d{1,2})', 'i'));
+    if (m) {
+      const monIdx = parseMonthName(m[3]);
+      const wd1 = weekdayIndex(m[1]);
+      if (monIdx !== null && wd1 !== null) {
+        const anchor = new Date(REF_YEAR, monIdx, parseInt(m[4], 10));
+        const start = nearestWeekday(anchor, wd1);
+        const wd2 = m[2] ? weekdayIndex(m[2]) : wd1;
+        const span = (wd2 === null) ? 0 : ((wd2 - wd1 + 7) % 7);
+        return { start: start, end: addDays(start, span), confidence: 'rule' };
+      }
+    }
+
+    // RULE: "[Fri-Sun ]first weekend of August", "third Saturday of March",
+    // "last Wednesday of August", "First Saturday in May". The resolved month
+    // must match the entry's own month: that guard keeps a stray rule from
+    // dragging an entry into a different chart (FEBRUARY-5 states "Third Sunday
+    // of January", which is a data question, not something to resolve silently).
+    m = text.match(new RegExp('(?:\\b(' + WD_NAMES + ')\\s*(?:-\\s*(' + WD_NAMES + '))?\\s+)?\\b(first|second|third|fourth|fifth|last|penultimate)\\s+(weekend|' + WD_NAMES + ')\\s+(?:of|in)\\s+([A-Za-z]{3,9})', 'i'));
+    if (m) {
+      const ord = ORDINAL_INDEX[m[3].toLowerCase()];
+      const ruleMonth = parseMonthName(m[5]);
+      if (ord !== undefined && ruleMonth !== null && ruleMonth === monthIdx) {
+        const targetIsWeekend = /^weekend$/i.test(m[4]);
+        if (targetIsWeekend) {
+          const sat = nthWeekdayOfMonth(REF_YEAR, ruleMonth, 6, ord);
+          const wd1 = m[1] ? weekdayIndex(m[1]) : 6;
+          const wd2 = m[2] ? weekdayIndex(m[2]) : (m[1] ? wd1 : 0);
+          const a = addDays(sat, offsetFromSaturday(wd1 === null ? 6 : wd1));
+          const b = addDays(sat, offsetFromSaturday(wd2 === null ? 0 : wd2));
+          return { start: (a <= b ? a : b), end: (a <= b ? b : a), confidence: 'rule' };
+        }
+        const wdT = weekdayIndex(m[4]);
+        if (wdT !== null) {
+          const d = nthWeekdayOfMonth(REF_YEAR, ruleMonth, wdT, ord);
+          return { start: d, end: d, confidence: 'rule' };
+        }
+      }
+    }
+
+    // RULE: "the first Saturday after August 15".
+    m = text.match(new RegExp('\\b(first|second|third|fourth)\\s+(' + WD_NAMES + ')\\s+after\\s+([A-Za-z]{3,9})\\s+(\\d{1,2})', 'i'));
+    if (m) {
+      const ord = ORDINAL_INDEX[m[1].toLowerCase()];
+      const wd = weekdayIndex(m[2]);
+      const monIdx = parseMonthName(m[3]);
+      if (ord > 0 && wd !== null && monIdx !== null) {
+        const anchor = new Date(REF_YEAR, monIdx, parseInt(m[4], 10));
+        let shift = (wd - anchor.getDay() + 7) % 7;
+        if (shift === 0) shift = 7; // strictly after
+        const d = addDays(anchor, shift + (ord - 1) * 7);
+        return { start: d, end: d, confidence: 'rule' };
+      }
+    }
+
     // Ranges that cross a month: "Sat Jan 3 - Sun Feb 14", "Apr 23 - May 2",
     // "weekends Feb 6 - Mar 28", "Thu-Sat Dec 30 - Jan 1". The generic pattern
     // below takes only a second day NUMBER, so without this branch the end of
@@ -4600,6 +4794,77 @@
       confidence: 'fallback'
     };
   }
+
+  // ============ WEEKDAY LABELS: DERIVED, NOT STORED ============
+  // Date fields carry weekday labels ("Sat Jan 2", "Thu-Sun Sept 9-19"). The
+  // labels are display only - the parser reads month and day - but they were
+  // authored by hand against whatever year the author had open, so 13 of them
+  // disagreed with REF_YEAR before v0.6.8, and ALL of them would go wrong again
+  // the moment REF_YEAR moves. Rather than re-audit 178 dated entries every time
+  // the reference year changes, the label is now derived from the date the parser
+  // already resolves. The stored month and day remain the source of truth; only
+  // the weekday word is rewritten, once, at boot.
+  const WEEKDAY_ABBR = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  // A leading pair of labels describes the first and last day of the span.
+  const PAIRED_WD_RE = /^(\s*)(Sun|Mon|Tues?|Weds?|Thur?s?|Fri|Sat)(\s*[-‐–—]\s*)(Sun|Mon|Tues?|Weds?|Thur?s?|Fri|Sat)\b/;
+  // Otherwise a label sits directly in front of a month and day.
+  const INLINE_WD_RE = /(Sun|Mon|Tues?|Weds?|Thur?s?|Fri|Sat)(?=\s+[A-Z][a-z]{2,8}\s+\d{1,2})/g;
+  // Entries whose label is deliberately NOT of REF_YEAR. AUGUST-8 describes the
+  // total eclipse of 12 August 2026, a one-time astronomical event: "Wed Aug 12"
+  // is correct for the year it actually happened, and deriving it against 2027
+  // would quietly paper over an open editorial question. Drop the key from here
+  // if the eclipse is ever re-anchored to a recurring event.
+  const DATE_LABEL_EXEMPT = { 'AUGUST-8': 'one-time eclipse of 12 Aug 2026' };
+
+  function deriveWeekdayLabels(dateStr, parsed) {
+    if (!dateStr || !parsed) return dateStr;
+    // Only touch spans the parser resolved to real days. approx / month /
+    // fallback / weekend-near have no specific day to name.
+    if (parsed.confidence !== 'day' && parsed.confidence !== 'range') return dateStr;
+    const startWd = WEEKDAY_ABBR[parsed.start.getDay()];
+    const endWd   = WEEKDAY_ABBR[parsed.end.getDay()];
+
+    if (PAIRED_WD_RE.test(dateStr)) {
+      return dateStr.replace(PAIRED_WD_RE, '$1' + startWd + '$3' + endWd);
+    }
+
+    const found = [];
+    let m;
+    INLINE_WD_RE.lastIndex = 0;
+    while ((m = INLINE_WD_RE.exec(dateStr)) !== null) found.push({ i: m.index, len: m[1].length });
+    if (!found.length) return dateStr;
+    // Back to front, so the earlier offsets stay valid as the string changes.
+    let out = dateStr;
+    for (let k = found.length - 1; k >= 0; k--) {
+      let wd = null;
+      if (k === 0) wd = startWd;
+      else if (k === found.length - 1) wd = endWd;
+      if (wd === null) continue;
+      out = out.slice(0, found[k].i) + wd + out.slice(found[k].i + found[k].len);
+    }
+    return out;
+  }
+
+  // Applied once to every dated Book. parseVoyageDate memoises on v._pvd and
+  // reads month/day rather than the weekday, so writing the label back cannot
+  // feed into the parse. The authored string is kept on v._dateAuthored so a
+  // reviewer can always see what the corpus actually says.
+  (function applyDerivedWeekdayLabels() {
+    let changed = 0, exempt = 0;
+    const stamp = (v, key) => {
+      if (!v.date) return;
+      if (DATE_LABEL_EXEMPT[key]) { exempt++; return; }
+      const next = deriveWeekdayLabels(v.date, parseVoyageDate(v));
+      if (next !== v.date) { v._dateAuthored = v.date; v.date = next; changed++; }
+    };
+    for (const v of VOYAGES)      stamp(v, v.month + '-' + v.n);
+    for (const v of LIVING_PAGES) stamp(v, v.lpKey);
+    for (const v of OTHER_WORLDS) stamp(v, v.owKey);
+    for (const v of DAYS_OF_YORE) stamp(v, v.dyKey);
+    // Exposed rather than logged, so the console stays clean but the ritual can
+    // still assert on it.
+    window.__cflWeekdayLabels = { refYear: REF_YEAR, corrected: changed, exempt: exempt };
+  })();
 
   // ============ BOOKMARKS (My Voyages) ============
   const BOOKMARK_KEY = 'cfl-bookmarks-v1';
@@ -5268,7 +5533,7 @@
     if (total === 0) {
       resultsList.innerHTML = `
         <div class="empty-state" style="grid-column:1/-1">
-          No bookmarks yet. Open any voyage or pilgrim stop and tap the ribbon to save it here.${hasManifest() ? '' : ' Bookmarking asks for an email once; the whole crew kit of bookmarks, journals, and galley notes is free.'}
+          No bookmarks yet. Open any voyage or pilgrim stop and tap the ribbon to save it here.${(AGENCY_CONFIG.gateMyVoyages && !hasManifest()) ? ' Bookmarking asks for an email once; the whole crew kit of bookmarks, journals, and galley notes is free.' : ''}
         </div>`;
     } else {
       const voyHtml = voyageItems.map(v => voyageCardHtml(v, true)).join('');
@@ -5532,7 +5797,8 @@
   let manifestReturnFocus = null;
 
   function requireManifest(next) {
-    if (hasManifest()) { next(); return; }
+    // Gate switched off, or the reader has already signed: straight through.
+    if (!AGENCY_CONFIG.gateMyVoyages || hasManifest()) { next(); return; }
     pendingManifestAction = next;
     openManifestGate();
   }
@@ -5565,10 +5831,11 @@
     saveManifest(rec);
     if (rec.email && rec.consent) {
       queueOutbox('newsletter', {
-        subject: 'CFL Manifest signup',
+        subject: 'CFL Manifest signup [' + (rec.source || 'unknown') + ']',
         form: 'newsletter',
         email: rec.email,
         name: rec.name || '',
+        signup_source: rec.source || '',
         joined: new Date(rec.joinedAt).toISOString()
       });
     }
@@ -5689,7 +5956,10 @@
         return;
       }
       const outboxId = queueOutbox('inquiry', {
-        subject: 'CFL Trip inquiry: ' + currentPlan.festival,
+        // The entry key rides in the SUBJECT line: sorting the inbox by subject
+        // is the conversion report, so which of the 799 entries actually sell
+        // can be read straight off the leads with no analytics attached.
+        subject: 'CFL Trip inquiry: ' + currentPlan.festival + ' [' + (currentPlan.key || '?') + ']',
         form: 'inquiry',
         name, email,
         travel_window: win,
@@ -5697,8 +5967,11 @@
         notes,
         festival: currentPlan.festival,
         port: currentPlan.port,
+        entry_book: currentPlan.book || '',
+        entry_chart: currentPlan.chart || '',
         entry_type: currentPlan.type || '',
         entry_key: currentPlan.key || '',
+        entry_dates: currentPlan.date || '',
         newsletter_opt_in: consent ? 'yes' : 'no'
       });
       const existing = loadManifest();
@@ -5708,10 +5981,11 @@
         existing.consent = true;
         saveManifest(existing);
         queueOutbox('newsletter', {
-          subject: 'CFL Manifest signup',
+          subject: 'CFL Manifest signup [inquiry-upgrade]',
           form: 'newsletter',
           email: existing.email,
           name: existing.name || '',
+          signup_source: 'inquiry-upgrade',
           joined: new Date().toISOString()
         });
       }
@@ -5920,6 +6194,57 @@
     // The Proving Grounds chip
     const gChip = $('#goto-proving-grounds');
     if (gChip) gChip.addEventListener('click', showProvingGrounds);
+  }
+
+  // ============ TODAY MASTHEAD ============
+  // 45 date fields gained a correct multi-day span in v0.6.8, so "what is on
+  // today, and what is on this week" finally tells the truth. It is the only
+  // reason to come back tomorrow, so it gets the top of the page.
+  function renderTodayMasthead() {
+    const host = document.getElementById('today-masthead');
+    if (!host) return;
+    const now = new Date();
+    // Map today's month and day onto the reference year, exactly as showToday does.
+    const lookup = new Date(REF_YEAR, now.getMonth(), now.getDate());
+    const todays = getVoyagesOn(lookup);
+    const dateStr = now.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+
+    let lede, pool;
+    if (todays.length) {
+      lede = todays.length === 1 ? 'One gathering is under way' : todays.length + ' gatherings are under way';
+      pool = todays;
+    } else {
+      const upcoming = [];
+      const seen = new Set();
+      for (let i = 1; i <= 7; i++) {
+        const d = new Date(REF_YEAR, now.getMonth(), now.getDate() + i);
+        for (const v of getVoyagesOn(d)) {
+          const k = v.lpKey || v.owKey || v.dyKey || (v.month + '-' + v.n);
+          if (!seen.has(k)) { seen.add(k); upcoming.push(v); }
+        }
+      }
+      lede = upcoming.length
+        ? 'Nothing charted today. The next seven days hold ' + upcoming.length
+        : 'Nothing charted today, and nothing this week';
+      pool = upcoming;
+    }
+
+    const shown = pool.slice(0, 3);
+    const cards = shown.map(v => voyageCardHtml(v, true)).join('');
+    const more = pool.length > shown.length ? ('See all ' + pool.length) : (pool.length ? 'Open the Today chart' : '');
+    host.innerHTML = `
+      <div class="today-mast-head">
+        <div class="today-mast-eyebrow">Today</div>
+        <div class="today-mast-date">${escapeHtml(dateStr)}</div>
+        <div class="today-mast-rule"><div class="line"></div><div class="line"></div></div>
+        <div class="today-mast-lede">${escapeHtml(lede)}</div>
+      </div>
+      ${cards ? `<div class="today-mast-grid">${cards}</div>` : ''}
+      ${more ? `<button class="today-mast-more" type="button" id="today-mast-more">${escapeHtml(more)}</button>` : ''}`;
+    host.hidden = false;
+    attachCardListeners(host);
+    const moreBtn = document.getElementById('today-mast-more');
+    if (moreBtn) moreBtn.addEventListener('click', showToday);
   }
 
   // ============ RENDER CHARTS HOME ============
@@ -6146,7 +6471,11 @@
       port: v.port,
       date: v.date || '',
       type: v.lpKey ? 'living-page' : (v.owKey ? 'other-world' : (v.dyKey ? 'day-of-yore' : 'voyage')),
-      key: v.lpKey || v.owKey || v.dyKey || (v.month + '-' + v.n)
+      key: v.lpKey || v.owKey || v.dyKey || (v.month + '-' + v.n),
+      // Carried into the lead: the inquiry should say which Book and which chart
+      // the reader was standing in when they asked.
+      book: v.lpKey ? 'The Living Pages' : (v.owKey ? 'The Other Worlds' : (v.dyKey ? 'The Days of Yore' : 'Calendar For Life')),
+      chart: v.month || ''
     };
 
     scrollContent.innerHTML = `
@@ -6472,7 +6801,9 @@
       port: s.waypoint,
       date: '',
       type: 'stop',
-      key: `${p.roman}-${s.n}`
+      key: `${p.roman}-${s.n}`,
+      book: 'Pilgrimages Of Humanity',
+      chart: p.name || ''
     };
     scrollContent.innerHTML = `
       <div class="scroll-chart-line">Pilgrimage ${escapeHtml(p.roman)} . ${escapeHtml(p.name).toUpperCase()}</div>
@@ -7121,6 +7452,7 @@
   // ============ INIT ============
   renderFlagRail();
   renderCharts();
+  renderTodayMasthead();
   renderPilgrimages();
 </script>
 
