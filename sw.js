@@ -5,7 +5,7 @@
    clients refresh on next load.
    ============================================================ */
 
-const CACHE_VERSION = 'cfl-v54';
+const CACHE_VERSION = 'cfl-v55';
 const APP_CACHE     = `${CACHE_VERSION}-app`;
 const FONT_CACHE    = `${CACHE_VERSION}-fonts`;
 
