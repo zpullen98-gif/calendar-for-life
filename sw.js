@@ -5,7 +5,7 @@
    clients refresh on next load.
    ============================================================ */
 
-const CACHE_VERSION = 'cfl-v59';
+const CACHE_VERSION = 'cfl-v60';
 const APP_CACHE     = `${CACHE_VERSION}-app`;
 const FONT_CACHE    = `${CACHE_VERSION}-fonts`;
 
@@ -45,8 +45,12 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
+    // Cache Storage is per-ORIGIN, not per-scope. On a shared host such as
+    // <user>.github.io every project page sees every other project's caches,
+    // so deleting everything that is not ours would wipe the offline shells of
+    // the sibling PWAs on the same account. Only ever reap our own prefix.
     await Promise.all(keys
-      .filter(k => k !== APP_CACHE && k !== FONT_CACHE)
+      .filter(k => k.startsWith('cfl-') && k !== APP_CACHE && k !== FONT_CACHE)
       .map(k => caches.delete(k)));
     await self.clients.claim();
   })());

@@ -27,11 +27,30 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
+      # Publish ONLY the app. Uploading the repo root would also publish
+      # publishers/ (the unshopped manuscript PDF and the pitch package), the
+      # knowledge pack, the standalone preview build, CLAUDE.md and DEPLOY.md —
+      # roughly 83% of the upload, none of it the app, and the manuscript is
+      # exactly the asset whose value depends on controlled distribution.
+      # Add new site files to this list explicitly; the default is NOT published.
+      - name: Stage the site
+        run: |
+          set -euo pipefail
+          mkdir -p _site
+          cp index.html sw.js manifest.webmanifest offline.html privacy.html _site/
+          cp -r icons images _site/
+          for extra in screenshots robots.txt sitemap.xml; do
+            if [ -e "$extra" ]; then cp -r "$extra" _site/; fi
+          done
+          echo "--- staged files ---"
+          find _site -type f | sort
+          echo "--- staged size ---"
+          du -sh _site
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Upload the entire repo root as the site — the PWA is fully static.
-          path: '.'
+          path: '_site'
 
       - name: Deploy to GitHub Pages
         id: deployment

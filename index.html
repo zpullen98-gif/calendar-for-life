@@ -3462,9 +3462,27 @@
   // ============ ONE-TIME LOCALSTORAGE MIGRATION ============
   // Rewrites any pre-rekey {type:'voyage', key:'JANUARY-9'} bookmark/journal/F&B
   // entry into the LP-keyed form when its month+n now points to a Living Page.
+  // These three IIFEs run at top level in the single app script, so ANYTHING
+  // they throw aborts the rest of the file: nothing renders, no listeners bind,
+  // and Set Sail is never wired. localStorage throws outright when site data is
+  // blocked (Safari private mode, a hardened profile, an enterprise policy) and
+  // setItem throws on a full quota, so the flag read and the flag write are
+  // routed through these two helpers. The migration bodies below already swallow
+  // their own errors; only the flag access was ever exposed.
+  // The write is attempted LAST on purpose: if it fails, the worst case is that
+  // the migration runs again on the next boot, which is idempotent.
+  function migrationDone(flagKey) {
+    try { return localStorage.getItem(flagKey) === 'done'; }
+    catch (e) { return false; }
+  }
+  function markMigrationDone(flagKey) {
+    try { localStorage.setItem(flagKey, 'done'); }
+    catch (e) { /* storage unavailable or full; retry next boot */ }
+  }
+
   (function migrateLivingPageStores() {
     const FLAG_KEY = 'cfl-lp-migration-v1';
-    if (localStorage.getItem(FLAG_KEY) === 'done') return;
+    if (migrationDone(FLAG_KEY)) return;
     const lpByOrig = new Map();
     for (const v of LIVING_PAGES) lpByOrig.set(v.origMonth + '-' + v.origN, v.lpKey);
     function migrateBookmarks() {
@@ -3508,14 +3526,14 @@
     migrateBookmarks();
     migrateObjectStore('cfl-journals-v1');
     migrateObjectStore('cfl-fnb-v1');
-    localStorage.setItem(FLAG_KEY, 'done');
+    markMigrationDone(FLAG_KEY);
   })();
 
   // Same pattern for Other Worlds: rewrite voyage-keyed entries to ow-keyed
   // when the original month+n now points to an Other Worlds entry.
   (function migrateOtherWorldStores() {
     const FLAG_KEY = 'cfl-ow-migration-v1';
-    if (localStorage.getItem(FLAG_KEY) === 'done') return;
+    if (migrationDone(FLAG_KEY)) return;
     const owByOrig = new Map();
     for (const v of OTHER_WORLDS) owByOrig.set(v.origMonth + '-' + v.origN, v.owKey);
     function migrateBookmarks() {
@@ -3558,7 +3576,7 @@
     migrateBookmarks();
     migrateObjectStore('cfl-journals-v1');
     migrateObjectStore('cfl-fnb-v1');
-    localStorage.setItem(FLAG_KEY, 'done');
+    markMigrationDone(FLAG_KEY);
   })();
 
   // Same pattern for The Days of Yore, with a twist: entries arrived from two
@@ -3568,7 +3586,7 @@
   // origMonth/origN point at slots long since refilled with unrelated voyages.
   (function migrateDaysOfYoreStores() {
     const FLAG_KEY = 'cfl-dy-migration-v1';
-    if (localStorage.getItem(FLAG_KEY) === 'done') return;
+    if (migrationDone(FLAG_KEY)) return;
     const dyByOrig = new Map();
     const dyByLp = new Map();
     for (const v of DAYS_OF_YORE) {
@@ -3624,7 +3642,7 @@
     migrateBookmarks();
     migrateObjectStore('cfl-journals-v1');
     migrateObjectStore('cfl-fnb-v1');
-    localStorage.setItem(FLAG_KEY, 'done');
+    markMigrationDone(FLAG_KEY);
   })();
 
   const MONTHS = ["JANUARY","FEBRUARY","MARCH","APRIL","MAY","JUNE","JULY","AUGUST","SEPTEMBER","OCTOBER","NOVEMBER","DECEMBER"];

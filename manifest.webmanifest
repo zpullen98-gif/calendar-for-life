@@ -2,7 +2,7 @@
   "name": "Calendar For Life",
   "short_name": "Calendar",
   "description": "A free illuminated almanac of festivals worth flying for. 365 voyages, 32 living-history reenactments, 52 fandom gatherings, 60 days of yore, and 29 pilgrimages across twelve charts of the world, from Calendar For Life Voyages.",
-  "id": "/",
+  "id": "/calendar-for-life/",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
