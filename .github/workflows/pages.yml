@@ -5,58 +5,69 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# Publishes by pushing the built site to the gh-pages branch, which GitHub Pages
+# serves directly. The previous approach used actions/deploy-pages, which needs
+# the Pages REST API, and every run failed at "Setup Pages" with
+#   HttpError: Resource not accessible by integration  (Create Pages site)
+# because this repository's workflow token is not permitted to create a Pages
+# site. Pushing a branch needs only contents: write, so this route avoids the
+# permission entirely and needs nothing switched on by hand.
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
-  group: pages
+  group: pages-deploy
   cancel-in-progress: true
 
 jobs:
   deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-        with:
-          # Turn Pages on from here rather than by hand in Settings. Without this
-          # the very first run fails at this step on a repository where Pages has
-          # never been configured, which is exactly what happened on run 1.
-          enablement: true
-
       # Publish ONLY the app. Uploading the repo root would also publish
       # publishers/ (the unshopped manuscript PDF and the pitch package), the
-      # knowledge pack, the standalone preview build, CLAUDE.md and DEPLOY.md —
-      # roughly 83% of the upload, none of it the app, and the manuscript is
-      # exactly the asset whose value depends on controlled distribution.
+      # knowledge pack, the standalone preview build, CLAUDE.md and DEPLOY.md.
       # Add new site files to this list explicitly; the default is NOT published.
       - name: Stage the site
         run: |
           set -euo pipefail
+          rm -rf _site
           mkdir -p _site
           cp index.html sw.js manifest.webmanifest offline.html privacy.html _site/
           cp -r icons images _site/
           for extra in screenshots robots.txt sitemap.xml; do
             if [ -e "$extra" ]; then cp -r "$extra" _site/; fi
           done
+          # Serve the files as-is; without this GitHub runs Jekyll over them.
+          touch _site/.nojekyll
           echo "--- staged files ---"
           find _site -type f | sort
           echo "--- staged size ---"
           du -sh _site
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: '_site'
+      - name: Guard against publishing anything private
+        run: |
+          set -euo pipefail
+          fail=0
+          for bad in publishers CLAUDE.md DEPLOY.md Calendar-For-Life-Knowledge-Pack.md Calendar-For-Life-preview.html; do
+            if [ -e "_site/$bad" ]; then echo "REFUSING: _site/$bad would be published"; fail=1; fi
+          done
+          if [ "$fail" -ne 0 ]; then exit 1; fi
+          echo "OK: nothing private staged"
 
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Publish to gh-pages
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          cd _site
+          git init -q
+          git checkout -q -b gh-pages
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Deploy ${GITHUB_SHA:0:7} from ${GITHUB_REF_NAME}"
+          git push --force "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" gh-pages:gh-pages
+          echo "Published to gh-pages. Live at https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}/"
