@@ -27,3 +27,15 @@ pwabuilder-*/
 # Marketing assets with unfilled placeholders (privacy policy email, press kit contact)
 # Move into repo once placeholders are filled.
 marketing/
+
+# The unshopped manuscript and pitch package. Purged from history before the
+# first public push: this repo has to be PUBLIC for GitHub Pages on a free
+# account, and a public repo publishes its whole history, which would have made
+# the manuscript downloadable by anyone. The files are still on disk locally and
+# publishers/build.ps1 still rebuilds them; they are simply not tracked.
+publishers/
+
+# Generated build artifact, rebuilt from index.html by
+# .scripts\fact-check\regenerate-preview.ps1. It was ~20 stored copies at 3.8 MB
+# each and the single largest reason .git had grown to 77.6 MB.
+Calendar-For-Life-preview.html
