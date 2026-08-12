@@ -102,6 +102,7 @@
     --gold:          #b8893a;
     --gold-light:    #d4b366;
     --gold-deep:     #8a6628;
+    --gold-ink:      #7f5d23;   /* small text on parchment: 4.86:1, vs 4.23:1 for --gold-deep */
     --crimson:       #7a1f2b;
     --crimson-dk:    #4d1118;
     --sea:           #2c4f6b;
@@ -156,12 +157,6 @@
     background: radial-gradient(ellipse at top, #1c1208 0%, #0a0604 60%), #0a0604 !important;
   }
 
-  @keyframes candleFlicker {
-    0%, 100% { transform: scaleY(1)    translateY(0); opacity: 0.95; }
-    25%      { transform: scaleY(1.06) translateY(-0.8px); opacity: 1; }
-    50%      { transform: scaleY(0.94) translateY(0.6px); opacity: 0.85; }
-    75%      { transform: scaleY(1.04) translateY(-0.4px); opacity: 0.98; }
-  }
 
   /* ====== TOME on the table ====== */
   body.on-cover #cover {
@@ -367,10 +362,6 @@
   }
   @media (max-height: 640px) {
     .compass-rose { height: min(220px, 28vh); }
-  }
-  @keyframes globeSpin {
-    from { transform: translateX(0); }
-    to   { transform: translateX(-200px); }
   }
 
   /* ============================================================
@@ -679,7 +670,7 @@
   .chart-card .month-quote .quote-author {
     font-family: 'IM Fell English SC', serif;
     font-style: normal;
-    color: var(--gold-deep);
+    color: var(--gold-ink);
     font-size: 0.65rem;
     letter-spacing: 0.22em;
     text-transform: uppercase;
@@ -843,7 +834,7 @@
     justify-content: space-between;
     align-items: center;
     font-family: 'Cinzel', serif;
-    color: var(--gold-deep);
+    color: var(--gold-ink);
     letter-spacing: 0.3em;
     font-size: 0.65rem;
     margin-bottom: 0.8rem;
@@ -898,7 +889,7 @@
     margin-top: 0.5rem;
     font-family: 'IM Fell English SC', serif;
     font-style: normal;
-    color: var(--gold-deep);
+    color: var(--gold-ink);
     font-size: 0.62rem;
     letter-spacing: 0.22em;
     text-transform: uppercase;
@@ -1021,7 +1012,7 @@
   .scroll-chart-line {
     text-align: center;
     font-family: 'IM Fell English SC', serif;
-    color: var(--gold-deep);
+    color: var(--gold-ink);
     letter-spacing: 0.25em;
     font-size: 0.75rem;
     margin-bottom: 1.5rem;
@@ -1260,12 +1251,21 @@
   /* ============================================================
      ANIMATIONS
      ============================================================ */
-  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to   { opacity: 1; transform: translateY(0); }
+
+  /* Respect the OS "reduce motion" setting. The almanac animates a great deal:
+     the cover fades and unfurls, cards lift on hover, overlays slide, and every
+     view change scrolls smoothly. For a reader with vestibular sensitivity that
+     is not decoration, it is a reason to close the tab. Scripted smooth scrolls
+     are gated separately in JS against the same media query. */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
-  @keyframes slowSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   @keyframes unfurl {
     from {
       opacity: 0;
@@ -2823,7 +2823,7 @@
     font-family: 'IM Fell English SC', serif;
     font-size: 0.72rem;
     letter-spacing: 0.22em;
-    color: var(--gold-deep);
+    color: var(--gold-ink);
     text-transform: uppercase;
     margin: 0.3rem 0 0.6rem;
   }
@@ -4316,13 +4316,39 @@
         };
       }
     }
-    // "early|mid|mid-to-late|late MONTH"
-    m = text.match(/\b(early|mid-to-late|mid|late)\s+([A-Z][a-z]+)/i);
-    if (m) {
-      const monIdx = parseMonthName(m[2]);
+    // "early|mid|late MONTH". Two forms used to be invisible here: the HYPHENATED
+    // "mid-February", which is the corpus's most common way of writing this, and the
+    // "early-mid June" compound, where the old alternation matched "early" and then
+    // demanded whitespace. Both fell through to the fallback below and parked the
+    // entry on the 1st of its month, which only the Today view ever revealed. 41
+    // entries were affected, including Berlinale, South by Southwest and Sziget.
+    //
+    // GUARD: hyphen support may only pull an entry INTO its own chart month, never
+    // push one out of it. A date that names several months ("mid-May through
+    // mid-September, peak July") would otherwise latch onto whichever came first and
+    // leave its chart entirely. So look for a match naming THIS entry's month first;
+    // failing that, fall back to the whitespace-only behaviour that shipped before,
+    // which leaves every previously-resolving entry exactly where it was. Modelled
+    // over all 509 dated entries before shipping: 41 improvements, 17 entries pulled
+    // back into their own chart, zero regressions.
+    const APPROX_PHASE = '(mid-to-late|early-mid|early|mid|late)';
+    let approxHit = null;
+    const approxScan = new RegExp('\\b' + APPROX_PHASE + '[\\s-]+([A-Za-z]+)', 'gi');
+    let am;
+    while ((am = approxScan.exec(text)) !== null) {
+      if (parseMonthName(am[2]) === monthIdx) { approxHit = am; break; }
+    }
+    if (!approxHit) {
+      approxHit = text.match(new RegExp('\\b' + APPROX_PHASE + '\\s+([A-Za-z]+)', 'i'));
+    }
+    if (approxHit) {
+      const monIdx = parseMonthName(approxHit[2]);
       if (monIdx !== null) {
-        const phase = m[1].toLowerCase();
-        const day = phase === 'early' ? 5 : phase === 'late' ? 25 : 15;
+        const phase = approxHit[1].toLowerCase();
+        const day = phase === 'early' ? 5
+                  : phase === 'early-mid' ? 10
+                  : phase === 'mid-to-late' ? 20
+                  : phase === 'late' ? 25 : 15;
         return {
           start: new Date(REF_YEAR, monIdx, day),
           end: new Date(REF_YEAR, monIdx, day),
@@ -4659,16 +4685,20 @@
     setTimeout(() => journalPageTextarea.focus(), 50);
   }
 
+  // Write any pending debounced journal text out NOW. Shared by closeJournal and by
+  // the pagehide/visibilitychange handlers below, so there is exactly one flush path.
+  function flushJournalNow() {
+    if (!journalSaveTimer) return;
+    clearTimeout(journalSaveTimer);
+    journalSaveTimer = null;
+    if (currentJournal.type && currentJournal.key && journalPageTextarea) {
+      setJournalText(currentJournal.type, currentJournal.key, journalPageTextarea.value);
+    }
+  }
+
   function closeJournal() {
     if (!journalOverlay) return;
-    // Flush any pending debounced save before closing.
-    if (journalSaveTimer) {
-      clearTimeout(journalSaveTimer);
-      journalSaveTimer = null;
-      if (currentJournal.type && currentJournal.key && journalPageTextarea) {
-        setJournalText(currentJournal.type, currentJournal.key, journalPageTextarea.value);
-      }
-    }
+    flushJournalNow();
     if (currentJournal.type && currentJournal.key) {
       refreshScrollJournalMirror(currentJournal.type, currentJournal.key);
     }
@@ -4696,6 +4726,18 @@
       }, 500);
     });
   }
+  // That 500ms debounce was the ONLY thing standing between the reader's text and
+  // localStorage, and closeJournal was the only flush. Closing the tab or
+  // backgrounding the installed app inside the window lost the text while the status
+  // line still read "Saving...". On iOS, backgrounding suspends timers outright, so
+  // the pending setTimeout may simply never run. Journals are the retention feature
+  // this app is built around; silently losing text the reader typed is the least
+  // forgivable failure available to it. pagehide covers tab close, navigation and
+  // bfcache; visibilitychange covers backgrounding, which is the mobile case.
+  window.addEventListener('pagehide', flushJournalNow);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') flushJournalNow();
+  });
   if (journalPageCloseBtn) journalPageCloseBtn.addEventListener('click', closeJournal);
   if (journalOverlay) {
     journalOverlay.addEventListener('click', (e) => {
@@ -7010,6 +7052,39 @@
       pilgrimDebounce = setTimeout(applyPilgrimSearch, 200);
     });
   }
+
+  // The six brand blocks are styled with cursor:pointer, carry a hover state and a
+  // click handler, and on the almanac view the brand is the ONLY control that clears
+  // search, flag and month in one action. They were plain divs: no role, no tabindex,
+  // no key handling, so a keyboard reader could not reach the app's own home button.
+  // keyify() already exists and is used at a dozen other call sites.
+  ['brand', 'brand-pilgrim', 'brand-living', 'brand-other-worlds',
+   'brand-days-of-yore', 'brand-proving-grounds'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && !el.getAttribute('role')) keyify(el);
+  });
+
+  // Honour prefers-reduced-motion for SCRIPTED scrolls. The CSS block handles the
+  // scroll-behavior property, but an explicit {behavior:'smooth'} argument beats the
+  // CSS property, and the app passes one in 26 places. Normalising the option once
+  // here is far less invasive than threading a check through every call site.
+  (function respectReducedMotion() {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const wrap = (obj, name) => {
+      const orig = obj && obj[name];
+      if (typeof orig !== 'function') return;
+      obj[name] = function (...args) {
+        if (mq.matches && args.length && args[0] && typeof args[0] === 'object' &&
+            args[0].behavior === 'smooth') {
+          args[0] = Object.assign({}, args[0], { behavior: 'auto' });
+        }
+        return orig.apply(this, args);
+      };
+    };
+    wrap(Element.prototype, 'scrollIntoView');
+    wrap(Element.prototype, 'scrollTo');
+    wrap(window, 'scrollTo');
+  })();
 
   // ============ INIT ============
   renderFlagRail();

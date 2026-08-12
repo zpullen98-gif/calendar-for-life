@@ -5,7 +5,7 @@
    clients refresh on next load.
    ============================================================ */
 
-const CACHE_VERSION = 'cfl-v61';
+const CACHE_VERSION = 'cfl-v63';
 const APP_CACHE     = `${CACHE_VERSION}-app`;
 const FONT_CACHE    = `${CACHE_VERSION}-fonts`;
 
@@ -104,7 +104,14 @@ async function staleWhileRevalidate(req, cacheName) {
   const networkPromise = fetch(req).then(res => {
     if (res && res.status === 200) cache.put(req, res.clone());
     return res;
-  }).catch(() => cached);
+  }).catch(err => {
+    // With nothing cached this used to resolve to `undefined`, and respondWith()
+    // given a non-Response throws a TypeError instead of failing cleanly. Reachable
+    // on a first load while offline for the Google Fonts URLs, which are the only
+    // resources not precached. Re-throw so the fetch handler sees a real error.
+    if (cached) return cached;
+    throw err;
+  });
   return cached || networkPromise;
 }
 
