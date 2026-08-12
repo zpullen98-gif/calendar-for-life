@@ -28,21 +28,59 @@
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
 
-<!-- Open Graph / social previews -->
+<link rel="canonical" href="https://zpullen98-gif.github.io/calendar-for-life/">
+
+<!-- Open Graph / social previews.
+     Scrapers do not resolve relative URLs, so every image and URL here is absolute.
+     The image is images/social-card.jpg, not the cover: the cover art is PORTRAIT
+     (1122x1402) and a summary_large_image card crops to about 1.91:1, which would
+     slice a band out of the middle of it. The card is a 1200x630 landscape frame
+     built by .scripts\make-social-card.ps1 that holds the whole cover uncropped. -->
 <meta property="og:title" content="Calendar For Life">
 <meta property="og:description" content="Charts &amp; Bearings For The Years Ahead. 365 voyages across the world’s festivals.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Calendar For Life">
-<!-- Relative image URL: make these absolute (https://<host>/images/cover.jpg) once the
-     site has a public URL, and lift twitter:card to summary_large_image. -->
-<meta property="og:image" content="./images/cover.jpg">
+<meta property="og:url" content="https://zpullen98-gif.github.io/calendar-for-life/">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://zpullen98-gif.github.io/calendar-for-life/images/social-card.jpg">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="The Calendar For Life cover: a galleon, a spyglass, and an old map on a lookout's table.">
-<meta name="twitter:image" content="./images/cover.jpg">
 
 <!-- Twitter Card -->
-<meta name="twitter:card" content="summary">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Calendar For Life">
 <meta name="twitter:description" content="Charts &amp; Bearings For The Years Ahead. 365 voyages across the world’s festivals.">
+<meta name="twitter:image" content="https://zpullen98-gif.github.io/calendar-for-life/images/social-card.jpg">
+<meta name="twitter:image:alt" content="The Calendar For Life cover: a galleon, a spyglass, and an old map on a lookout's table.">
+
+<!-- Structured data. Deliberately names the AGENCY as well as the app, because the
+     almanac is the lead-capture engine for Calendar For Life Voyages and it is the
+     business that should become discoverable. No contact email here until the
+     business address exists; the personal one does not belong in public markup. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": "https://zpullen98-gif.github.io/calendar-for-life/#website",
+      "url": "https://zpullen98-gif.github.io/calendar-for-life/",
+      "name": "Calendar For Life",
+      "description": "An illuminated almanac of festivals worth flying for: 365 voyages, 32 living-history reenactments, 52 fandom gatherings, 60 days of yore and 29 pilgrimages.",
+      "inLanguage": "en"
+    },
+    {
+      "@type": "Organization",
+      "@id": "https://zpullen98-gif.github.io/calendar-for-life/#agency",
+      "name": "Calendar For Life Voyages",
+      "description": "A full-service festival travel agency.",
+      "url": "https://zpullen98-gif.github.io/calendar-for-life/"
+    }
+  ]
+}
+</script>
 
 <!-- Favicon: a small spinning-compass mark, inlined as SVG data URL -->
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' fill='%231a1006'/><circle cx='20' cy='20' r='15' fill='none' stroke='%23b8893a' stroke-width='1.5'/><polygon points='20,4 17,20 20,36 23,20' fill='%23b8893a'/><polygon points='4,20 20,17 36,20 20,23' fill='%237a5826'/><circle cx='20' cy='20' r='2' fill='%23e2c389'/></svg>">
