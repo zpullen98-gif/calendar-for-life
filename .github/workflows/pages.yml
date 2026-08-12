@@ -26,6 +26,11 @@ jobs:
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
+        with:
+          # Turn Pages on from here rather than by hand in Settings. Without this
+          # the very first run fails at this step on a repository where Pages has
+          # never been configured, which is exactly what happened on run 1.
+          enablement: true
 
       # Publish ONLY the app. Uploading the repo root would also publish
       # publishers/ (the unshopped manuscript PDF and the pitch package), the
