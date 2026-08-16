@@ -1,11 +1,11 @@
-/* ============================================================
+﻿/* ============================================================
    Calendar For Life - service worker
    Cache-first for the app shell, network-first for Google Fonts.
    Bump CACHE_VERSION whenever index.html or icons change so old
    clients refresh on next load.
    ============================================================ */
 
-const CACHE_VERSION = 'cfl-v65';
+const CACHE_VERSION = 'cfl-v66';
 const APP_CACHE     = `${CACHE_VERSION}-app`;
 const FONT_CACHE    = `${CACHE_VERSION}-fonts`;
 
