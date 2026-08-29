@@ -1526,6 +1526,37 @@
     transform: translateY(-1px);
   }
 
+  /* Month chips: the twelve charts as tabs in the rail */
+  .month-chip {
+    background: linear-gradient(180deg, rgba(42, 34, 22, 0.85), rgba(30, 24, 15, 0.92));
+    border: 1.5px solid rgba(191, 155, 74, 0.35);
+    color: #c9ab6b;
+    padding: 0.5rem 0.8rem;
+    font-family: 'Cinzel', serif;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    font-size: 0.72rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    text-transform: uppercase;
+    box-shadow: inset 0 1px 0 rgba(191, 155, 74, 0.15), 0 1px 6px rgba(0, 0, 0, 0.35);
+  }
+  .month-chip:hover {
+    border-color: rgba(232, 201, 106, 0.8);
+    color: var(--parchment);
+    transform: translateY(-1px);
+  }
+  .month-chip.is-active,
+  .today-chip.is-active,
+  .myvoy-chip.is-active {
+    border-color: rgba(232, 201, 106, 0.9);
+    color: var(--parchment);
+    box-shadow: 0 0 0 2px rgba(232, 201, 106, 0.22), inset 0 1px 0 rgba(232, 201, 106, 0.3);
+  }
+  .pilgrim-doorway { margin-top: 3rem; text-align: center; }
+
   /* Print button inside scroll modal */
   .scroll-print {
     position: absolute;
@@ -2842,10 +2873,10 @@
 <body>
 
 <!-- ============================================================
-     COVER PAGE
+     COVER PAGE  |  retired. The almanac opens on the calendar itself:
+     the reader lands on the current month, not on a door.
      ============================================================ -->
-<!-- ====== COVER  |  click the map to open the calendar ====== -->
-<main id="cover" aria-label="Calendar For Life cover">
+<main id="cover" aria-label="Calendar For Life cover" hidden style="display:none">
   <h1 class="sr-only">Calendar For Life</h1>
   <div class="cover-frame">
     <img class="cover-image" src="./images/cover.jpg"
@@ -2859,7 +2890,7 @@
 <!-- ============================================================
      ALMANAC INTERFACE
      ============================================================ -->
-<main id="almanac" aria-label="Calendar For Life almanac">
+<main id="almanac" class="is-open" aria-label="Calendar For Life almanac">
 
   <header class="top-rail">
     <div class="top-rail-inner">
@@ -2888,7 +2919,7 @@
   </nav>
 
   <!-- 12 CHART CARDS -->
-  <div id="charts-home">
+  <div id="charts-home" style="display:none">
     <!-- TODAY. The only view with a reason to open the almanac daily, which is
          the whole argument for installing it, so it sits above the charts. -->
     <section class="today-masthead" id="today-masthead" aria-label="Today in the almanac" hidden></section>
@@ -2897,13 +2928,35 @@
       <!-- populated by JS -->
     </div>
 
+
+  </div>
+
+  <!-- THE MONTH VIEW  |  the home page. Twelve chips in the rail choose the
+       chart; every gathering of the month, from all the Books, lists here. -->
+  <div id="chart-view">
+    <div class="chart-header" id="chart-header">
+      <!-- populated by JS -->
+    </div>
+    <div class="voyages-list" id="voyages-list">
+      <!-- populated by JS -->
+    </div>
+    <!-- The Pilgrimages answer to no calendar, so they keep their own Book
+         behind one doorway rather than a month page they could never sit on. -->
+    <div class="closing-flourish pilgrim-doorway">
+      <button class="page-nav-btn" id="goto-pilgrimages" type="button" aria-label="Open Pilgrimages Of Humanity">
+        Book the Second &middot; Pilgrimages Of Humanity
+      </button>
+      <p class="creed" style="margin-top:0.9rem">
+        Twenty-nine trails that answer to no calendar
+        <strong>Walk them when the road calls</strong>
+      </p>
+    </div>
     <div class="closing-flourish">
       <p class="creed">
         These are not photo opportunities They are gatherings There is a difference
         <strong>Don&rsquo;t be the one who wasn&rsquo;t there</strong>
       </p>
     </div>
-
     <section class="agency-block" id="agency-block" aria-label="About Calendar For Life Voyages">
       <div class="scroll-divider"><div class="line"></div><div class="line"></div></div>
       <h2 class="agency-title">Calendar For Life Voyages</h2>
@@ -2922,20 +2975,9 @@
     </section>
   </div>
 
-  <!-- A SINGLE CHART DETAIL -->
-  <div id="chart-view">
-    <div class="back-link" id="back-from-chart">Back to the Twelve Charts</div>
-    <div class="chart-header" id="chart-header">
-      <!-- populated by JS -->
-    </div>
-    <div class="voyages-list" id="voyages-list">
-      <!-- populated by JS -->
-    </div>
-  </div>
-
   <!-- SEARCH / FLAG FILTER RESULTS -->
   <div id="results-view" style="display:none">
-    <div class="back-link" id="back-from-results">Back to the Twelve Charts</div>
+    <div class="back-link" id="back-from-results">Back to the month</div>
     <div class="results-banner" id="results-banner" aria-live="polite"></div>
     <div class="voyages-list filter-results" id="results-list"></div>
   </div>
@@ -5121,6 +5163,7 @@
     chartView.classList.remove('is-open');
     resultsView.classList.add('is-open');
     resultsView.style.display = 'block';
+    railSetActive('myvoyages');
     // Also hide the pilgrim section if currently visible so the user lands cleanly in almanac.
     const pilgrim = document.getElementById('pilgrimages');
     if (pilgrim) { pilgrim.style.display = 'none'; pilgrim.classList.remove('is-open'); }
@@ -5196,6 +5239,7 @@
     chartView.classList.remove('is-open');
     resultsView.classList.add('is-open');
     resultsView.style.display = 'block';
+    railSetActive('today');
 
     const dateStr = now.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
 
@@ -5235,7 +5279,6 @@
   const $ = (s, c=document) => c.querySelector(s);
   const $$ = (s, c=document) => Array.from(c.querySelectorAll(s));
 
-  const cover         = $('#cover');
   const almanac       = $('#almanac');
   const chartsHome    = $('#charts-home');
   const chartsGrid    = $('#charts-grid');
@@ -5250,20 +5293,6 @@
   const scrollOverlay = $('#scroll-overlay');
   const scrollContent = $('#scroll-content');
 
-  // ============ COVER → ALMANAC ============
-  // Title page (cover) shows on load. Click Set Sail to fade the cover and reveal
-  // the Calendar. After entry the cover is hidden permanently for the session.
-  $('#enter-btn').addEventListener('click', () => {
-    document.body.classList.remove('on-cover');
-    cover.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
-    cover.style.opacity = '0';
-    cover.style.transform = 'translateY(-20px)';
-    setTimeout(() => {
-      cover.style.display = 'none';
-      almanac.classList.add('is-open');
-      window.scrollTo(0, 0);
-    }, 700);
-  });
 
   // ============ CALENDAR FOR LIFE VOYAGES (lead capture) ============
   // The Ship's Manifest gate, charter inquiries, and the outbox that
@@ -5729,32 +5758,15 @@
         <span class="myvoy-count is-zero">0</span>
       </button>
     `;
-    const pilgrimChip = `
-      <button class="pilgrim-chip" id="goto-pilgrimages" type="button" aria-label="Open Pilgrimages Of Humanity">
-        <span class="pilgrim-chip-label">Pilgrimages Of Humanity</span>
+    // The twelve charts as tabs. The Books no longer hold tabs of their own:
+    // their gatherings live in the months now, and only the Pilgrimages, which
+    // answer to no calendar, keep a doorway (at the foot of every month).
+    const monthChips = MONTHS.map(m => `
+      <button class="month-chip" data-month="${m}" type="button" aria-label="Open the chart for ${m}">
+        ${m.slice(0, 3)}
       </button>
-    `;
-    const livingChip = `
-      <button class="living-chip" id="goto-living-pages" type="button" aria-label="Open The Living Pages">
-        <span class="living-chip-label">The Living Pages</span>
-      </button>
-    `;
-    const owChip = `
-      <button class="ow-chip" id="goto-other-worlds" type="button" aria-label="Open The Other Worlds">
-        <span class="ow-chip-label">The Other Worlds</span>
-      </button>
-    `;
-    const dyChip = `
-      <button class="dy-chip" id="goto-days-of-yore" type="button" aria-label="Open The Days of Yore">
-        <span class="dy-chip-label">The Days of Yore</span>
-      </button>
-    `;
-    const pgChip = `
-      <button class="pg-chip" id="goto-proving-grounds" type="button" aria-label="Open The Proving Grounds">
-        <span class="pg-chip-label">The Proving Grounds</span>
-      </button>
-    `;
-    flagRail.innerHTML = todayChip + myVoyChip + pilgrimChip + livingChip + owChip + dyChip + pgChip + FLAGS.map(f => `
+    `).join('');
+    flagRail.innerHTML = todayChip + monthChips + myVoyChip + FLAGS.map(f => `
       <div class="flag-chip" data-flag="${f.key}" style="--flag-bg: ${f.color}">
         <span class="dot"></span>${f.label}
       </div>
@@ -5779,26 +5791,23 @@
     if (mChip) mChip.addEventListener('click', showMyVoyages);
     updateMyVoyagesCount();
 
-    // Pilgrimages chip - bind here because it's rendered by this function
-    const pChip = $('#goto-pilgrimages');
-    if (pChip) pChip.addEventListener('click', showPilgrimages);
-
-    // The Living Pages chip
-    const lChip = $('#goto-living-pages');
-    if (lChip) lChip.addEventListener('click', showLivingPages);
-
-    // The Other Worlds chip
-    const oChip = $('#goto-other-worlds');
-    if (oChip) oChip.addEventListener('click', showOtherWorlds);
-
-    // The Days of Yore chip
-    const dChip = $('#goto-days-of-yore');
-    if (dChip) dChip.addEventListener('click', showDaysOfYore);
-
-    // The Proving Grounds chip
-    const gChip = $('#goto-proving-grounds');
-    if (gChip) gChip.addEventListener('click', showProvingGrounds);
+    // Month chips - the calendar's own tabs
+    $$('.month-chip').forEach(c => c.addEventListener('click', () => openChart(c.dataset.month)));
   }
+
+  // Which chip carries the lamp. 'month' lights its chart; the Books are gone
+  // from the rail, so these three kinds are the whole vocabulary.
+  function railSetActive(kind, month) {
+    const t = $('#goto-today');
+    if (t) t.classList.toggle('is-active', kind === 'today');
+    const m = $('#goto-myvoyages');
+    if (m) m.classList.toggle('is-active', kind === 'myvoyages');
+    $$('.month-chip').forEach(c =>
+      c.classList.toggle('is-active', kind === 'month' && c.dataset.month === month));
+  }
+
+  function currentMonthName() { return MONTHS[new Date().getMonth()]; }
+  function showMonthHome() { openChart(state.activeMonth || currentMonthName()); }
 
   // ============ TODAY MASTHEAD ============
   // 45 date fields gained a correct multi-day span in v0.6.8, so "what is on
@@ -5890,16 +5899,17 @@
     const flag = state.activeFlag;
 
     if (!q && !flag) {
-      // back to chart-home view if currently in a results view but not in chart-view
+      // a cleared search returns to the month the reader was on
       if (resultsView.style.display === 'block') {
         resultsView.style.display = 'none';
-        chartsHome.style.display = '';
+        showMonthHome();
       }
       return;
     }
 
-    // build the result set
-    let pool = VOYAGES;
+    // build the result set: the calendar plus the three dated Books, the
+    // same union every month view now shows
+    let pool = VOYAGES.concat(LIVING_PAGES, OTHER_WORLDS, DAYS_OF_YORE);
     if (flag) pool = pool.filter(v => flagMatches(v, flag));
     if (q) {
       pool = pool.filter(v => {
@@ -5956,7 +5966,20 @@
   function openChart(month) {
     state.activeMonth = month;
     const idx = MONTHS.indexOf(month);
-    const monthVoyages = VOYAGES.filter(v => v.month === month);
+    // The whole month, from every Book: calendar voyages plus the Living
+    // Pages, Other Worlds, and Days of Yore gatherings dated inside it. The
+    // cards carry data-lpkey/owkey/dykey, so resolution never touches the
+    // colliding legacy month/n. Sorted by when they actually begin.
+    const monthVoyages = VOYAGES.filter(v => v.month === month)
+      .concat(LIVING_PAGES.filter(v => v.month === month))
+      .concat(OTHER_WORLDS.filter(v => v.month === month))
+      .concat(DAYS_OF_YORE.filter(v => v.month === month));
+    monthVoyages.sort((a, b) => {
+      const da = parseVoyageDate(a), db = parseVoyageDate(b);
+      const ta = da && da.start ? da.start.getTime() : 0;
+      const tb = db && db.start ? db.start.getTime() : 0;
+      return (ta - tb) || ((a.n || 0) - (b.n || 0));
+    });
     const flagged = state.activeFlag
       ? monthVoyages.filter(v => flagMatches(v, state.activeFlag))
       : monthVoyages;
@@ -5979,6 +6002,7 @@
     chartsHome.style.display = 'none';
     resultsView.style.display = 'none';
     chartView.classList.add('is-open');
+    railSetActive('month', month);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -5988,7 +6012,10 @@
     const idx = MONTHS.indexOf(v.month);
     const metaLeft = showMonth
       ? `${escapeHtml(v.month)} &middot; ${ROMAN[idx]}`
-      : `VOYAGE ${escapeHtml(String(v.n))}`;
+      : (v.lpKey ? 'THE LIVING PAGES'
+        : v.owKey ? 'THE OTHER WORLDS'
+        : v.dyKey ? 'THE DAYS OF YORE'
+        : `VOYAGE ${escapeHtml(String(v.n))}`);
     const quoteHtml = v.quote ? `
         <div class="voyage-quote">
           <span class="quote-text">${escapeHtml(v.quote)}</span>
@@ -6206,20 +6233,14 @@
   });
 
   // ============ BACK BUTTONS ============
-  $('#back-from-chart').addEventListener('click', () => {
-    chartView.classList.remove('is-open');
-    chartsHome.style.display = '';
-    state.activeMonth = null;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  });
+  // #back-from-chart is gone with the chart grid: the months are tabs now.
   $('#back-from-results').addEventListener('click', () => {
     state.search = '';
     state.activeFlag = null;
     searchInput.value = '';
     $$('.flag-chip').forEach(c => c.classList.remove('active'));
     resultsView.style.display = 'none';
-    chartsHome.style.display = '';
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    showMonthHome();
   });
   $('#brand').addEventListener('click', () => {
     state.search = '';
@@ -6229,9 +6250,13 @@
     $$('.flag-chip').forEach(c => c.classList.remove('active'));
     resultsView.style.display = 'none';
     chartView.classList.remove('is-open');
-    chartsHome.style.display = '';
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    showMonthHome();
   });
+  // The Pilgrimages doorway at the foot of every month
+  {
+    const pdoor = $('#goto-pilgrimages');
+    if (pdoor) pdoor.addEventListener('click', showPilgrimages);
+  }
 
   // ============ SEARCH ============
   let searchDebounce;
@@ -7087,10 +7112,12 @@
   })();
 
   // ============ INIT ============
+  // The reader lands on the month they are standing in. renderCharts and
+  // renderTodayMasthead are retired with the chart grid and the masthead:
+  // Today is a tab, and the twelve charts are the rail.
   renderFlagRail();
-  renderCharts();
-  renderTodayMasthead();
   renderPilgrimages();
+  openChart(currentMonthName());
 </script>
 
 <!-- ============================================================
