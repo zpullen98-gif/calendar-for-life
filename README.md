@@ -6,7 +6,7 @@
 
 # **[zpullen98-gif.github.io/calendar-for-life](https://zpullen98-gif.github.io/calendar-for-life/)**
 
-Free, no sign-up, works offline once opened. Click **Set Sail** on the cover to enter the almanac.
+Free, no sign-up, works offline once opened. It opens on the chart for the current month.
 
 Install it as a real app: in Chrome or Edge, look for the **install icon** at the right of the address bar, or menu → *Install Calendar For Life*. On iPhone, Share → *Add to Home Screen*.
 
@@ -24,13 +24,13 @@ A self-contained Progressive Web App holding **799 entries** across five books:
 | The Other Worlds | **52** | fandom conventions and film-location gatherings |
 | The Living Pages | **32** | battle reenactments and living-history encampments |
 
-Every entry carries a port of call, dates, a description, lodging, food, a quote, and two nearby "bearings" worth the detour. **779** of them also carry a curated film.
+Every entry carries a port of call, dates, a description, lodging, food, a quote, and two nearby "bearings" worth the detour. **778** of them also carry a curated film.
 
 Two more views cross-list rather than duplicate: **The Proving Grounds** (the sporting entries) and part of **The Other Worlds** (the fandom-flagged calendar voyages).
 
 One HTML file. No backend, no accounts, no tracking, no analytics. Bookmarks, journals and galley notes live in your own browser and never leave it. The only outside request the page makes is to Google Fonts.
 
-**It is free.** The almanac is the front door for **Calendar For Life Voyages**, a full-service festival travel agency — every entry has a *Plan This Voyage* button that sends an enquiry.
+**It is free.** The almanac is the front door for **Calendar For Life Voyages**, a festival travel agency. Every entry has a *Plan This Voyage* button that sends an inquiry; until the booking desk opens, inquiries wait on the reader's device.
 
 ---
 
@@ -96,7 +96,7 @@ After editing `index.html`:
 
 1. Bump `CACHE_VERSION` in `sw.js`, or returning visitors keep the old app.
 2. Unregister the service worker and delete caches before reloading.
-3. Check the counts still read 365 / 29 trails / 290 stops / 32 / 52 / 60, with 779 films.
+3. Check the counts still read 365 / 29 trails / 290 stops / 32 / 52 / 60, with 778 films.
 
 The full ritual, the editorial history, and the traps that have already cost real debugging
 time are written up in the project notes kept outside this repository.
