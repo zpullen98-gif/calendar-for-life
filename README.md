@@ -30,7 +30,7 @@ Two more views cross-list rather than duplicate: **The Proving Grounds** (the sp
 
 One HTML file. No backend, no accounts, no tracking, no analytics. Bookmarks, journals and galley notes live in your own browser and never leave it. The only outside request the page makes is to Google Fonts.
 
-**It is free.** The almanac is the front door for **Calendar For Life Voyages**, a festival travel agency. Every entry has a *Plan This Voyage* button that sends an inquiry; until the booking desk opens, inquiries wait on the reader's device.
+**It is free.** No accounts, no email, nothing sent anywhere: every entry, bookmark, journal and galley note lives in your own browser.
 
 ---
 
