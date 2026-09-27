@@ -6,7 +6,7 @@
 
 # **[zpullen98-gif.github.io/calendar-for-life](https://zpullen98-gif.github.io/calendar-for-life/)**
 
-Free, no sign-up, works offline once opened. It opens on the chart for the current month.
+Free, no sign-up, works offline once opened. It opens on the twelve month charts.
 
 Install it as a real app: in Chrome or Edge, look for the **install icon** at the right of the address bar, or menu → *Install Calendar For Life*. On iPhone, Share → *Add to Home Screen*.
 
@@ -28,7 +28,9 @@ Every entry carries a port of call, dates, a description, lodging, food, a quote
 
 Two more views cross-list rather than duplicate: **The Proving Grounds** (the sporting entries) and part of **The Other Worlds** (the fandom-flagged calendar voyages).
 
-One HTML file. No backend, no accounts, no tracking, no analytics. Bookmarks, journals and galley notes live in your own browser and never leave it. The only outside request the page makes is to Google Fonts.
+Content and application logic live in one HTML file, with a separate visual layer. No backend, no accounts, no tracking, no analytics. Bookmarks, journals and galley notes live in your own browser. Google Fonts supplies the existing reading faces; videos open only when a reader follows a link.
+
+The Outside Of Time atlas design lives in `css/house.css`, `house-cards.css`, `house-overlays.css`, and `house-pages.css`, with `house.js` reflecting visible navigation states. `images/atlas-library.webp` is the shared decorative illustration; titles, navigation and reading content remain real text. Cinzel for the masthead is self-hosted in `fonts/` with its license. All visual assets are cached for offline use and explicitly included in the Pages workflow. Keep the separate `OutsideOfTime/almanac` fork's content and behavior when porting presentation changes.
 
 **It is free.** No accounts, no email, nothing sent anywhere: every entry, bookmark, journal and galley note lives in your own browser.
 
@@ -56,7 +58,10 @@ npx --yes http-server -p 8080
 
 ```
 CalendarForLife/
-├─ index.html              ← the entire app: markup, styles, script, and ten JSON data islands
+├─ index.html              ← original markup, base styles, application script, ten JSON data islands
+├─ house.js                ← presentation state and accessible navigation labels
+├─ css/                    ← atlas shell, cards, reading overlays and utility pages
+├─ fonts/                  ← self-hosted display font and its license
 ├─ manifest.webmanifest    ← PWA manifest (name, icons, shortcuts, app id)
 ├─ sw.js                   ← service worker; bump CACHE_VERSION on every index.html change
 ├─ offline.html            ← parchment fallback when a request cannot be served

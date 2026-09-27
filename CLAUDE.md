@@ -4,6 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project overview
 
+The current presentation layer is separate from the original single-file runtime: `css/house*.css`, `house.js`, `images/atlas-library.webp`, and `fonts/`. It is shared visually with Outside Of Time, but that workshop's `almanac/index.html` is a distinct functional fork. Never replace either fork's embedded data or application script with the other. The preview generator now embeds the visual layer and verifies its local dependencies; regenerate it after styling changes too. Pages publishes only its explicit asset allowlist.
+
 **Calendar For Life** is a single-file Progressive Web App: an illuminated almanac with a parchment-and-gold aesthetic. The product is two "books" stitched into one HTML file:
 
 - **Book the First — The Festivals of the World**: 365 festival "voyages" across 12 month "charts"

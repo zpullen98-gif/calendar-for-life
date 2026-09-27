@@ -6,7 +6,7 @@
    clients refresh on next load.
    ============================================================ */
 
-const CACHE_VERSION = 'cfl-v74';
+const CACHE_VERSION = 'cfl-v76';
 const APP_CACHE     = `${CACHE_VERSION}-app`;
 // The fonts live in their own cache, deliberately NOT keyed to CACHE_VERSION:
 // a version bump used to reap them, so every deploy cost the reader a fresh
@@ -19,6 +19,14 @@ const FONT_CSS      = 'https://fonts.googleapis.com/css2?family=Cinzel:wght@400;
 const APP_SHELL = [
   './',
   './index.html',
+  './css/house.css',
+  './css/house-cards.css',
+  './css/house-overlays.css',
+  './css/house-pages.css',
+  './house.js',
+  './images/atlas-library.webp',
+  './fonts/cinzel-latin.woff2',
+
   './manifest.webmanifest',
   './offline.html',
   './privacy.html',
@@ -42,7 +50,13 @@ self.addEventListener('install', event => {
     // addAll is atomic - if one URL fails the whole install fails.
     // Use individual adds so a missing icon during dev doesn't break the SW.
     await Promise.all(APP_SHELL.map(async url => {
-      try { await cache.add(url); }
+      try {
+        // Install this edition from the network, including its new art and styles.
+        // An ordinary cache.add can reuse the previous edition's HTTP response.
+        const res = await fetch(new Request(url, { cache: 'reload' }));
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        await cache.put(url, res);
+      }
       catch (e) { console.warn('[sw] skip', url, e.message); }
     }));
     self.skipWaiting();
