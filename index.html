@@ -2253,6 +2253,8 @@
 <link rel="stylesheet" href="css/house.css">
 <link rel="stylesheet" href="css/house-cards.css">
 <link rel="stylesheet" href="css/house-overlays.css">
+<link rel="stylesheet" href="css/house-service.css">
+<script src="js/oot-service.js" data-wing="almanac"></script>
 </head>
 <body class="house-atlas-home">
 <a class="skip" id="skip-link" href="#charts-home">Skip to content</a>
@@ -4281,7 +4283,7 @@
         </div>
         <div class="fnb-form-row">
           <label>Name</label>
-          <input type="text" class="fnb-form-name" aria-label="Name of recipe, drink or wine" placeholder="e.g. Cape Malay bobotie" value="${name}">
+          <input type="text" class="fnb-form-name" aria-label="Name of recipe, drink or wine" placeholder="Name the recipe, drink or wine" value="${name}">
         </div>
         <textarea class="fnb-form-notes" aria-label="Tasting notes or recipe" placeholder="How it tasted, where you had it, the recipe, the bottle...">${notes}</textarea>
         <div class="fnb-form-actions">
@@ -4455,6 +4457,9 @@
 
   // ============ MY VOYAGES VIEW ============
   function showMyVoyages() {
+    clearTimeout(searchDebounce);
+    searchInput.value = '';
+    window.dispatchEvent(new Event('calendar:viewchange'));
     const list = loadBookmarks();
     // Resolve each saved key to its underlying voyage / stop record.
     const voyageItems = [];
@@ -4493,7 +4498,7 @@
     resultsView.classList.add('is-open');
     resultsView.style.display = 'block';
     railSetActive('myvoyages');
-    navSet({ cfl: 'results' });
+    navSet({ cfl: 'results', mode: 'saved' });
     // Also hide the pilgrim section if currently visible so the user lands cleanly in almanac.
     const pilgrim = document.getElementById('pilgrimages');
     if (pilgrim) { pilgrim.style.display = 'none'; pilgrim.classList.remove('is-open'); }
@@ -4569,6 +4574,9 @@
     return matches;
   }
   function showToday() {
+    clearTimeout(searchDebounce);
+    searchInput.value = '';
+    window.dispatchEvent(new Event('calendar:viewchange'));
     const now = new Date();
     // The lookup is today's real date: getVoyagesOn resolves the weekday
     // rules against the year the reader is standing in.
@@ -4586,7 +4594,7 @@
     resultsView.classList.add('is-open');
     resultsView.style.display = 'block';
     railSetActive('today');
-    navSet({ cfl: 'results' });
+    navSet({ cfl: 'results', mode: 'today' });
 
     const dateStr = now.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
 
@@ -4864,13 +4872,13 @@
 
   // ============ APPLY FILTERS ============
   function applyFilters() {
+    railSetActive(null);
     const q = state.search.trim().toLowerCase();
     const flag = state.activeFlag;
 
     if (!q && !flag) {
       // a cleared search puts the twelve charts back
       if (resultsView.style.display === 'block') {
-        navBack('results');
         showAlmanac();
       }
       return;
@@ -4907,7 +4915,7 @@
     chartsHome.style.display = 'none';
     chartView.classList.remove('is-open');
     resultsView.style.display = 'block';
-    navSet({ cfl: 'results' });
+    navSet({ cfl: 'results', mode: 'search', query: state.search, flag: state.activeFlag });
 
     let banner = '';
     if (q && flag) {
@@ -5004,6 +5012,7 @@
 
   // Clickable cards are divs; give them button semantics and keyboard reach.
   function keyify(el) {
+    if (el.matches('button, a[href], input, select, textarea')) return;
     el.setAttribute('role', 'button');
     el.setAttribute('tabindex', '0');
     el.addEventListener('keydown', (e) => {
@@ -5188,7 +5197,6 @@
     showAlmanac();
   });
   $('#back-from-results').addEventListener('click', () => {
-    navBack('results');
     state.search = '';
     state.activeFlag = null;
     searchInput.value = '';
@@ -5196,7 +5204,6 @@
     showAlmanac();
   });
   $('#brand').addEventListener('click', () => {
-    navBack('results');
     state.search = '';
     state.activeFlag = null;
     state.activeMonth = null;
@@ -5397,6 +5404,7 @@
     almanacSection.style.display = 'none';
   }
   function showPilgrimages() {
+    clearTimeout(searchDebounce); clearTimeout(pilgrimDebounce);
     hideAllTopSections();
     pilgrimSection.style.display = '';
     pilgrimSection.classList.add('is-open');
@@ -5413,13 +5421,18 @@
   // The whole answer to "put me back at the start": the twelve months, with
   // Pilgrimages closed behind you and no door lit.
   function showAlmanac() {
-    navBack(['trail', 'pilgrim-results', 'pilgrimages']);
+    clearTimeout(searchDebounce); clearTimeout(pilgrimDebounce);
+    navBack(['month', 'results', 'trail', 'pilgrim-results', 'pilgrimages']);
     hideAllTopSections();
     almanacSection.style.display = '';
     resultsView.style.display = 'none';
     chartView.classList.remove('is-open');
     chartsHome.style.display = '';
+    clearSearchState();
+    state.activeMonth = null;
     railSetActive(null);
+    navSet({ cfl: 'home' });
+    window.dispatchEvent(new Event('calendar:viewchange'));
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -5484,7 +5497,7 @@
     pilgrimHome.style.display = 'none';
     pilgrimView.classList.remove('is-open');
     pilgrimResults.style.display = 'block';
-    navSet({ cfl: 'pilgrim-results' });
+    navSet({ cfl: 'pilgrim-results', query: pilgrimState.search });
 
     pilgrimResultsBanner.innerHTML = `<strong>${stopHits.length}</strong> stop${stopHits.length === 1 ? '' : 's'} match &ldquo;<em>${escapeHtml(q)}</em>&rdquo;`;
 
@@ -5597,13 +5610,17 @@
     $$('.flag-chip').forEach(c => c.classList.remove('active'));
   }
   function navRender(s) {
-    const kind = (s && s.cfl) || 'month';
+    const kind = (s && s.cfl) || 'home';
+    if (kind === 'home') { showAlmanac(); return; }
     if (kind === 'scroll') { openEntryByKey(s.key); return; }
     if (kind === 'pilgrimages') { showPilgrimages(); return; }
     if (kind === 'trail') { showPilgrimages(); openPilgrimage(s.roman); return; }
-    if (kind === 'pilgrim-results') { showPilgrimages(); return; }
+    if (kind === 'pilgrim-results') { showPilgrimages(); pilgrimState.search = s.query || ''; pilgrimSearch.value = pilgrimState.search; applyPilgrimSearch(); return; }
     if (kind === 'results') {
       showAlmanac();
+      if (s.mode === 'saved') { showMyVoyages(); return; }
+      if (s.mode === 'today') { showToday(); return; }
+      state.search = s.query || ''; state.activeFlag = s.flag || null; searchInput.value = state.search;
       if (state.search.trim() || state.activeFlag) applyFilters();
       return;
     }
@@ -5818,6 +5835,36 @@
     }
   }
 
+  // Keep the same four destinations available from either book. A tab first
+  // returns through the existing history stack, then opens its destination.
+  let calendarNavigationPending = false;
+  window.calendarNavigate = function(kind) {
+    if (calendarNavigationPending) return;
+    clearTimeout(searchDebounce); clearTimeout(pilgrimDebounce);
+    const finish = () => {
+      calendarNavigationPending = false;
+      showAlmanac();
+      state.search = ''; state.activeFlag = null; state.activeMonth = null; searchInput.value = '';
+      pilgrimState.search = ''; pilgrimSearch.value = '';
+      if (kind === 'today') showToday();
+      else if (kind === 'saved') showMyVoyages();
+      else if (kind === 'trails') showPilgrimages();
+      window.dispatchEvent(new Event('calendar:viewchange'));
+    };
+    if (navStack.length) {
+      calendarNavigationPending = true;
+      window.addEventListener('popstate', finish, {once:true});
+      navBack(['month','results','pilgrimages','trail','pilgrim-results']);
+    } else finish();
+  };
+  window.calendarRefreshSaved = function() {
+    const y = window.scrollY;
+    const previous = navFromPop;
+    navFromPop = true;
+    try { showMyVoyages(); } finally { navFromPop = previous; }
+    window.scrollTo({top:y,behavior:'instant'});
+  };
+
   // ============ INIT ============
   // The almanac opens on the twelve months, January through December: that is
   // the whole of the home page, and the three doors sit in the rail above it.
@@ -5829,6 +5876,7 @@
   renderCharts();
   renderPilgrimages();
   chartsHome.style.display = '';
+  navSet({ cfl: 'home' });
   if (bootKey) openSharedEntry(bootKey);
 </script>
 

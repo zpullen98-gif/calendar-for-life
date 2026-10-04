@@ -4,7 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project overview
 
-The current presentation layer is separate from the original single-file runtime: `css/house*.css`, `house.js`, `images/atlas-library.webp`, and `fonts/`. It is shared visually with Outside Of Time, but that workshop's `almanac/index.html` is a distinct functional fork. Never replace either fork's embedded data or application script with the other. The preview generator now embeds the visual layer and verifies its local dependencies; regenerate it after styling changes too. Pages publishes only its explicit asset allowlist.
+The current presentation layer is separate from the original single-file runtime: `css/house*.css`, `house.js`, `images/atlas-library.webp`, and `fonts/`. The shared service controller is `js/oot-service.js`, copied from WorldTable's `static/service/oot-service.js`. Its preference is `oot.service.v1` (`day` or `night`), reflected on `html[data-service]`; Calendar colours live in `css/house-service.css`. Pages publishes only its explicit asset allowlist, including `js/`.
+
+The live suite checkout is `C:/Users/zpull/OutsideOfTime/_publish`, not the retired private workshop. Its `almanac/index.html` is a distinct functional fork: never replace either fork's embedded data or application script with the other. For a Calendar update, copy the common presentation files byte for byte, apply the same reviewed runtime fixes surgically to both index files, and bump `cfl-vN` here and `oot-cfl-vN` there. Preserve the suite's shared script tags, caches, backup tools and history engine. Run the suite's `tools/check-all.mjs` before publishing its main branch. A push to this repo's main publishes only the standalone `/calendar-for-life/` site through `.github/workflows/pages.yml`; it does not update `/almanac/` automatically.
+
+After presentation or runtime changes, regenerate the shareable preview with `.scripts/fact-check/regenerate-preview.ps1`. The generator embeds service resources as well as the artwork. For navigation checks, run `npm ci --prefix tools`, then `node tools/check-flow.cjs . ../OutsideOfTime/_publish/almanac`. The checks run the actual embedded runtimes with temporary in-memory records and exercise tabs, Back/Forward, search, bookmark removal and pending search cancellation. The tools and their dependencies are not shipped.
 
 **Calendar For Life** is a single-file Progressive Web App: an illuminated almanac with a parchment-and-gold aesthetic. The product is two "books" stitched into one HTML file:
 

@@ -36,7 +36,7 @@ jobs:
           rm -rf _site
           mkdir -p _site
           cp index.html sw.js house.js manifest.webmanifest offline.html privacy.html _site/
-          cp -r icons images css fonts _site/
+          cp -r icons images css fonts js _site/
           for extra in screenshots robots.txt sitemap.xml; do
             if [ -e "$extra" ]; then cp -r "$extra" _site/; fi
           done

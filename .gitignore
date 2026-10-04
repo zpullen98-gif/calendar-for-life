@@ -4,6 +4,7 @@ Thumbs.db
 *.swp
 .idea/
 .vscode/
+node_modules/
 
 # PWABuilder downloads (re-generated on demand, not source of truth)
 *.msixbundle

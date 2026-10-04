@@ -1,0 +1,7 @@
+{
+  "name": "calendar-for-life-checks",
+  "private": true,
+  "description": "Development-only interaction checks. The app has no build step.",
+  "scripts": { "test": "node check-flow.cjs .." },
+  "devDependencies": { "jsdom": "30.1.2" }
+}
