@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+# offline.html is the service worker's navigation fallback, not a real page.
+Disallow: /calendar-for-life/offline.html
+
+Sitemap: https://zpullen98-gif.github.io/calendar-for-life/sitemap.xml
